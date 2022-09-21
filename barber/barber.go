@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"time"
 
 	"github.com/fatih/color"
@@ -12,7 +13,7 @@ type BarberShop struct {
 	NumberOfBarbers int
 	BarbersDoneChan chan bool
 	ClientsChan     chan string
-	Open            bool
+	Opened          bool
 }
 
 func (b *BarberShop) AddBarber(barber string) {
@@ -35,7 +36,7 @@ func (b *BarberShop) AddBarber(barber string) {
 				}
 				b.CutHair(barber, c)
 			} else {
-				b.Close(barber)
+				b.CloseBarber(barber)
 				return
 			}
 		}
@@ -43,12 +44,38 @@ func (b *BarberShop) AddBarber(barber string) {
 }
 
 func (b *BarberShop) CutHair(barber, c string) {
-	color.Green("%s: cutting hair for %s", barber, c)
+	log.Printf("%s: cutting hair for %s", barber, c)
 	time.Sleep(b.HairCutDuration)
-	color.Green("%s: done hair for %s", barber, c)
+	log.Printf("%s: done hair for %s", barber, c)
 }
 
-func (b *BarberShop) Close(barber string) {
-	color.Cyan("%s: going home", b)
+func (b *BarberShop) CloseBarber(barber string) {
+	color.Cyan("%s: going home", barber)
 	b.BarbersDoneChan <- true
+}
+
+func (b *BarberShop) Close() {
+	color.Cyan("Closing")
+	close(b.ClientsChan)
+	b.Opened = false
+
+	for a := 1; a <= b.NumberOfBarbers; a++ {
+		<-b.BarbersDoneChan
+	}
+	close(b.BarbersDoneChan)
+	color.Green("Closed")
+}
+
+func (b *BarberShop) AddClient(name string) {
+	color.Green("%s: arrived", name)
+	if b.Opened {
+		select {
+		case b.ClientsChan <- name:
+			color.Yellow("%s: took seat in waiting room", name)
+		default:
+			color.Red("%s: leaves (waiting room is full", name)
+		}
+	} else {
+		color.Red("%s: leaves (shop is closed)", name)
+	}
 }

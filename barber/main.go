@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -8,8 +9,8 @@ import (
 )
 
 var capacity = 10
-var rate = 100
-var duration = 1000 * time.Microsecond
+var rate = 100000
+var duration = 1 * time.Second
 var open = 10 * time.Second
 
 func main() {
@@ -26,10 +27,33 @@ func main() {
 		NumberOfBarbers: 0,
 		ClientsChan:     clients,
 		BarbersDoneChan: done,
-		Open:            true,
+		Opened:          true,
 	}
 
 	color.Green("Opened")
 	shop.AddBarber("A")
-	time.Sleep(5 * time.Second)
+
+	shopCh := make(chan bool)
+	closed := make(chan bool)
+	go func() {
+		<-time.After(open)
+		shopCh <- true
+		shop.Close()
+		closed <- true
+	}()
+
+	i := 1
+	go func() {
+		for {
+			r := rand.Int() % (2 * rate)
+			select {
+			case <-shopCh:
+				return
+			case <-time.After(time.Microsecond * time.Duration(r)):
+				shop.AddClient(fmt.Sprintf("client #%d", i))
+				i++
+			}
+		}
+	}()
+	<-closed
 }
