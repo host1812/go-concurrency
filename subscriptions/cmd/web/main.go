@@ -2,9 +2,11 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/alexedwards/scs/redisstore"
@@ -23,6 +25,35 @@ func main() {
 	db.Ping()
 
 	session := initSession()
+
+	//loggers
+	infoLog := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime)
+	errorLog := log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
+
+	wg := sync.WaitGroup{}
+
+	app := Config{
+		Session:  session,
+		DB:       db,
+		Wait:     &wg,
+		InfoLog:  infoLog,
+		ErrorLog: errorLog,
+	}
+
+	app.serve()
+}
+
+// start http server
+func (app *Config) serve() {
+	srv := &http.Server{
+		Addr:    fmt.Sprintf(":%d", port),
+		Handler: app.routes(),
+	}
+	app.InfoLog.Printf("starting web server on port %d\n", port)
+	err := srv.ListenAndServe()
+	if err != nil {
+		log.Panicf("failed to start server on port %d, err: %s\n", port, err)
+	}
 }
 
 func initDB() *sql.DB {
