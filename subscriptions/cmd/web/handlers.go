@@ -11,6 +11,47 @@ func (app *Config) LoginPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Config) PostLoginPage(w http.ResponseWriter, r *http.Request) {
+	_ = app.Session.RenewToken(r.Context())
+	// parse form
+	err := r.ParseForm()
+	if err != nil {
+		app.ErrorLog.Println(err)
+	}
+	// get email, password
+	email := r.Form.Get("email")
+	password := r.Form.Get("password")
+
+	user, err := app.Models.User.GetByEmail(email)
+	if err != nil {
+		app.InfoLog.Printf("%s - user not found\n", email)
+		app.Session.Put(r.Context(), "error", "invalid credentials")
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	// check password
+	valid, err := user.PasswordMatches(password)
+	if err != nil {
+		app.InfoLog.Printf("%s - not able to match password\n", email)
+		app.Session.Put(r.Context(), "error", "invalid credentials")
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	if !valid {
+		app.InfoLog.Printf("%s - tried to authenticate with invalid password\n", email)
+		app.Session.Put(r.Context(), "error", "invalid credentials")
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	// login successful
+	app.InfoLog.Printf("%s - successfully authenticated\n", email)
+	app.Session.Put(r.Context(), "userId", user.ID)
+	app.Session.Put(r.Context(), "user", user)
+	app.Session.Put(r.Context(), "flash", "successful login")
+	app.Session.Put(r.Context(), "error", "successful login")
+	app.Session.Put(r.Context(), "warning", "successful login")
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (app *Config) Logout(w http.ResponseWriter, r *http.Request) {

@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"text/template"
 	"time"
+
+	"github.com/host1812/go-concurrency/subscriptions/data"
 )
 
 var path = "./cmd/web/templates"
@@ -19,7 +21,7 @@ type TemplateData struct {
 	Error         string
 	Authenticated bool
 	Now           time.Time
-	// User          *data.User
+	User          *data.User
 }
 
 func (app *Config) render(
@@ -44,6 +46,7 @@ func (app *Config) render(
 	}
 
 	if td == nil {
+		app.InfoLog.Println("initialize template data")
 		td = &TemplateData{}
 	}
 
@@ -62,6 +65,8 @@ func (app *Config) render(
 }
 
 func (app *Config) AddDefaultData(td *TemplateData, r *http.Request) *TemplateData {
+	app.InfoLog.Println("td:", td)
+	app.InfoLog.Println("session:", app.Session.Keys(r.Context()))
 	td.Flash = app.Session.PopString(r.Context(), "flash")
 	td.Warning = app.Session.PopString(r.Context(), "warning")
 	td.Error = app.Session.PopString(r.Context(), "error")
