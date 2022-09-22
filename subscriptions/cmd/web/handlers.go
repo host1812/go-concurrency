@@ -48,8 +48,6 @@ func (app *Config) PostLoginPage(w http.ResponseWriter, r *http.Request) {
 	app.Session.Put(r.Context(), "userId", user.ID)
 	app.Session.Put(r.Context(), "user", user)
 	app.Session.Put(r.Context(), "flash", "successful login")
-	app.Session.Put(r.Context(), "error", "successful login")
-	app.Session.Put(r.Context(), "warning", "successful login")
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

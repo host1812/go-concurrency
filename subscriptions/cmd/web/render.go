@@ -65,12 +65,10 @@ func (app *Config) render(
 }
 
 func (app *Config) AddDefaultData(td *TemplateData, r *http.Request) *TemplateData {
-	app.InfoLog.Println("td:", td)
-	app.InfoLog.Println("session:", app.Session.Keys(r.Context()))
 	td.Flash = app.Session.PopString(r.Context(), "flash")
 	td.Warning = app.Session.PopString(r.Context(), "warning")
 	td.Error = app.Session.PopString(r.Context(), "error")
-	if app.IsAutheticated(r) {
+	if app.IsAuthenticated(r) {
 		td.Authenticated = true
 	} else {
 		td.Authenticated = false
@@ -80,6 +78,6 @@ func (app *Config) AddDefaultData(td *TemplateData, r *http.Request) *TemplateDa
 	return td
 }
 
-func (app *Config) IsAutheticated(r *http.Request) bool {
+func (app *Config) IsAuthenticated(r *http.Request) bool {
 	return app.Session.Exists(r.Context(), "userId")
 }
