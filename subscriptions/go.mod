@@ -2,6 +2,8 @@ module github.com/host1812/go-concurrency/subscriptions
 
 go 1.19
 
+require github.com/bwmarrin/go-alone v0.0.0-20190806015146-742bb55d1631
+
 require (
 	github.com/PuerkitoBio/goquery v1.8.0 // indirect
 	github.com/alexedwards/scs/redisstore v0.0.0-20220528130143-d93ace5be94b // indirect
@@ -24,5 +26,6 @@ require (
 	github.com/xhit/go-simple-mail/v2 v2.11.0 // indirect
 	golang.org/x/crypto v0.0.0-20220919173607-35f4265a4bc0 // indirect
 	golang.org/x/net v0.0.0-20220921203646-d300de134e69 // indirect
+	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
 	golang.org/x/text v0.3.7 // indirect
 )
