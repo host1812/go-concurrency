@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strconv"
 
 	"github.com/host1812/go-concurrency/subscriptions/data"
 )
@@ -151,13 +152,54 @@ func (app *Config) ActivateAccount(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (app *Config) ChooseSubscription(w http.ResponseWriter, r *http.Request) {
-	if !app.Session.Exists(r.Context(), "userId") {
-		app.Session.Put(r.Context(), "warning", "Must login first")
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+func (app *Config) SubscribeToPlan(w http.ResponseWriter, r *http.Request) {
+	// get id of the plan
+	id := r.URL.Query().Get("id")
+	planID, _ := strconv.Atoi(id)
+	plan, err := app.Models.Plan.GetOne(planID)
+	if err != nil {
+		app.Session.Put(r.Context(), "error", "Failed to get plan from db.")
+		http.Redirect(w, r, "/members/plans", http.StatusSeeOther)
 		return
 	}
 
+	user, ok := app.Session.Get(r.Context(), "user").(data.User)
+	if !ok {
+		app.Session.Put(r.Context(), "error", "Login first!")
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	// generate invoice and email it
+	app.Wait.Add(1)
+	go func() {
+		defer app.Wait.Done()
+
+		invoice, err := app.getInvoice(user, plan)
+		if err != nil {
+			app.ErrorChan <- err
+		}
+
+		msg := Message{
+			To:       user.Email,
+			Subject:  "Your invoice",
+			Data:     invoice,
+			Template: "invoice",
+		}
+
+		app.sendEmail(msg)
+	}()
+	// generate manual
+	// send an email with manual
+	// update db
+	// redirect
+}
+
+func (app *Config) getInvoice(u data.User, plan *data.Plan) (string, error) {
+	app.InfoLog.Printf("plan amount formatted for plan id %d: %s", plan.ID, plan.PlanAmountFormatted)
+	return plan.PlanAmountFormatted, nil
+}
+
+func (app *Config) ChooseSubscription(w http.ResponseWriter, r *http.Request) {
 	plans, err := app.Models.Plan.GetAll()
 	if err != nil {
 		app.ErrorLog.Println("err getting plans from db:", err)

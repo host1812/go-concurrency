@@ -76,6 +76,12 @@ func (p *Plan) GetOne(id int) (*Plan, error) {
 		return nil, err
 	}
 
+	plan.PlanAmountFormatted = plan.AmountForDisplay()
+	if err != nil {
+		log.Println("Error scanning", err)
+		return nil, err
+	}
+
 	return &plan, nil
 }
 

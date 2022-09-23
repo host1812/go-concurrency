@@ -39,12 +39,14 @@ func main() {
 	wg := sync.WaitGroup{}
 
 	app = &Config{
-		Session:  session,
-		DB:       db,
-		Wait:     &wg,
-		InfoLog:  infoLog,
-		ErrorLog: errorLog,
-		Models:   data.New(db),
+		Session:       session,
+		DB:            db,
+		Wait:          &wg,
+		InfoLog:       infoLog,
+		ErrorLog:      errorLog,
+		Models:        data.New(db),
+		ErrorChan:     make(chan error),
+		ErrorChanDone: make(chan bool),
 	}
 	go app.listenForShutdown()
 
@@ -52,7 +54,20 @@ func main() {
 
 	go app.listenForMail()
 
+	go app.listenForErrors()
+
 	app.serve()
+}
+
+func (app *Config) listenForErrors() {
+	for {
+		select {
+		case err := <-app.ErrorChan:
+			app.ErrorLog.Println(err)
+		case <-app.ErrorChanDone:
+			return
+		}
+	}
 }
 
 // start http server
@@ -145,11 +160,14 @@ func (app *Config) shutdown() {
 
 	// stopping mailer
 	app.Mailer.DoneChan <- true
+	app.ErrorChanDone <- true
 
 	app.InfoLog.Println("closing channels")
 	close(app.Mailer.MailerChan)
 	close(app.Mailer.ErrorChan)
 	close(app.Mailer.DoneChan)
+	close(app.ErrorChan)
+	close(app.ErrorChanDone)
 
 }
 
