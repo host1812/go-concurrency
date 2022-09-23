@@ -24,6 +24,8 @@ import (
 const port = 80
 const maxDbTries = 10
 
+var app *Config
+
 func main() {
 	db := initDB()
 	db.Ping()
@@ -36,7 +38,7 @@ func main() {
 
 	wg := sync.WaitGroup{}
 
-	app := Config{
+	app = &Config{
 		Session:  session,
 		DB:       db,
 		Wait:     &wg,

@@ -17,3 +17,7 @@ type Config struct {
 	Wait     *sync.WaitGroup
 	Models   data.Models
 }
+
+func (app *Config) GetInfoLogger() *log.Logger {
+	return app.InfoLog
+}
