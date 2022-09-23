@@ -70,6 +70,12 @@ func (app *Config) AddDefaultData(td *TemplateData, r *http.Request) *TemplateDa
 	td.Error = app.Session.PopString(r.Context(), "error")
 	if app.IsAuthenticated(r) {
 		td.Authenticated = true
+		u, ok := app.Session.Get(r.Context(), "user").(data.User)
+		if !ok {
+			app.ErrorLog.Println("err getting user from session")
+		} else {
+			td.User = &u
+		}
 	} else {
 		td.Authenticated = false
 	}
