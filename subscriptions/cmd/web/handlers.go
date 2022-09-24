@@ -104,7 +104,7 @@ func (app *Config) PostRegisterPage(w http.ResponseWriter, r *http.Request) {
 		app.Session.Put(
 			r.Context(),
 			"error",
-			fmt.Sprintf("err inserting user into db:", err),
+			fmt.Sprintln("err inserting user into db:", err),
 		)
 		http.Redirect(w, r, "/register", http.StatusSeeOther)
 		return
